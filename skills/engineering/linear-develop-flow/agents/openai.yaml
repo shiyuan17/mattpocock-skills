@@ -1,0 +1,5 @@
+interface:
+  display_name: "Linear Develop Flow"
+  short_description: "Plan Linear tasks and merge worktrees into develop"
+policy:
+  allow_implicit_invocation: false

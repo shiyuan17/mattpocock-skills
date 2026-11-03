@@ -1,0 +1,5 @@
+interface:
+  display_name: "Git Split Push"
+  short_description: "Split changes into commits and push them safely"
+policy:
+  allow_implicit_invocation: false

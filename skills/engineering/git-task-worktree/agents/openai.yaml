@@ -1,0 +1,5 @@
+interface:
+  display_name: "Git Task Worktree"
+  short_description: "Implement one task from develop in a worktree"
+policy:
+  allow_implicit_invocation: false
