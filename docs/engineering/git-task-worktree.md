@@ -2,7 +2,7 @@
 
 `git-task-worktree` implements one task from the latest `origin/develop` in an isolated worktree, then merges the result into `develop`, pushes it, and removes the temporary branches.
 
-The original checkout remains untouched, including any uncommitted changes. This is a single-task lifecycle, not a Linear task graph or a multi-agent orchestration flow.
+The original checkout remains untouched, including any uncommitted changes. A dirty original worktree does not block the flow. This is a single-task lifecycle, not a Linear task graph or a multi-agent orchestration flow.
 
 ## When to reach for it
 
@@ -14,17 +14,21 @@ You invoke this by typing `/git-task-worktree`, and the [agent](https://www.aihe
 
 ## Prerequisites
 
-The repository must expose a reachable `origin/develop` ref and allow ordinary pushes to `develop`. The task may come from the current conversation or an explicit issue, Linear task, local file, or URL.
+The repository must expose a reachable `origin/develop` ref and allow ordinary pushes to `develop`. The task may come from the current conversation or an explicit issue, Linear task, local file, or URL. Missing task details stop the run with a report instead of a follow-up question.
 
 ## One isolated task
 
-The skill creates `codex/task/<slug>` from `origin/develop`, keeps implementation and validation inside that worktree, and uses a temporary integration worktree for the final non-fast-forward merge. It never copies or cleans the original checkout.
+The skill creates `codex/task/<slug>` from `origin/develop`, keeps implementation and task-focused checks inside that worktree, and uses a temporary integration worktree for the final non-fast-forward merge. It never copies or cleans the original checkout.
 
 ## Common questions
 
 **What happens to uncommitted changes in my current checkout?**
 
 Nothing. They stay where they are while the task worktree starts from `origin/develop`.
+
+**Does it run the whole repository test suite?**
+
+No. It runs only checks required by the task or directly covering the changed behavior. Repository-wide checks and unrelated reviews are out of scope.
 
 **Does it leave the task branch around after merging?**
 
@@ -33,8 +37,8 @@ No. After the `develop` push succeeds, it removes the task worktree and deletes 
 ## It's working if
 
 - The report names the exact `origin/develop` baseline SHA before implementation starts.
-- The task branch contains one clear implementation commit with its tests.
-- Review and validation run against the fixed develop baseline and the integrated branch.
+- The task branch contains one clear implementation commit with the task-related changes.
+- Focused checks run against the task worktree and, when needed, the integrated branch.
 - `develop` receives a dedicated merge commit and is pushed without force.
 - Temporary worktrees and task branches disappear only after a successful push.
 

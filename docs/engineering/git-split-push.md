@@ -1,8 +1,8 @@
 ## What it does
 
-`git-split-push` turns a mixed working tree into a sequence of coherent commits and pushes each commit to the current branch's configured upstream. It keeps implementation, tests, and required fixtures together so every batch has a useful boundary.
+`git-split-push` turns a mixed working tree into a sequence of coherent commits and pushes each commit to the current branch's configured upstream. It keeps implementation, tests, and required fixtures together so every batch has a useful boundary, without running unrelated validation.
 
-It does not rewrite existing history or force-push. The defining constraint is that ambiguous grouping, failed checks, or an unsafe remote state stops the run with completed commits left intact.
+It does not rewrite existing history or force-push. Before each push it fetches the upstream and merges a newer remote tip into the current branch when needed. Ambiguous grouping, merge conflicts, or an unsafe remote state stops the run with completed commits left intact.
 
 ## When to reach for it
 
@@ -13,11 +13,11 @@ You invoke this by typing `/git-split-push`, and the [agent](https://www.aihero.
 
 ## Prerequisites
 
-The current checkout must be on a named branch with a configured upstream that accepts ordinary pushes. The skill does not clean or stash a dirty tree.
+The current checkout must be on a named branch with a configured upstream that accepts ordinary pushes. The skill does not clean, stash, or validate unrelated work.
 
 ## Cohesive batches
 
-The skill looks for vertical batches rather than file-shaped batches. An implementation stays with the behavior it enables, its tests, and the fixtures needed to validate it. Independent documentation or configuration can stand alone only when it does not make an earlier batch incomplete.
+The skill looks for vertical batches rather than file-shaped batches. An implementation stays with the behavior it enables, its tests, and the fixtures needed to ship it. Independent documentation or configuration can stand alone only when it does not make an earlier batch incomplete.
 
 ## Common questions
 
@@ -29,12 +29,16 @@ No. It only stages and commits the current working tree changes, then performs o
 
 The run stops. Completed commits remain in place, and the report names the remaining paths and the command needed to inspect or continue.
 
+**Does it run tests or formatters?**
+
+No. It analyzes batches, creates commits, merges a moved upstream when necessary, and performs ordinary pushes. Git hooks may still run as part of committing.
+
 ## It's working if
 
 - Each commit describes one behavior or intent instead of a directory.
-- Tests and implementation for a behavior land in the same batch.
+- Related tests and implementation for a behavior land in the same batch when they are already part of the changes.
 - Every successful batch has a recorded commit hash and push result.
-- A failed hook, test, conflict, or unsafe remote state leaves the repository recoverable without a reset.
+- A failed hook, merge conflict, or unsafe remote state leaves the repository recoverable without a reset.
 
 ## Where it fits
 
