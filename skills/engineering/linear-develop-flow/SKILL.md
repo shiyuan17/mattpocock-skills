@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Run a complete task-graph development flow from the latest `develop` baseline. This skill is user-invoked because it creates external Linear issues, worktrees, branches, merges, pushes, and deletes branches.
 
-The original working tree is never modified or used as an implementation worktree. Its uncommitted changes remain untouched.
+Implementation stays in task worktrees. An original checkout on another branch remains untouched. If the original checkout is on `develop`, final integration may use it after committing only current-task changes under the target preparation rules below.
 
 ## Resolve the request
 
@@ -17,28 +17,52 @@ Use the current conversation unless the user supplies a spec, issue, local file,
 ## Preflight and baseline
 
 1. Fetch remote refs without changing the checked-out branch.
-2. Confirm that the latest `origin/develop` resolves to a commit. If it does not, stop and report the blocking detail without asking follow-up questions.
+2. Confirm that the latest `origin/develop` resolves to a commit and record that initial baseline SHA. If it does not, stop and report the blocking detail without asking follow-up questions.
 3. Resolve repository context and default checks from actual project guidance and harness/tool configuration. Keep `origin/develop` as this flow's default baseline; do not invent a new configuration layer or repeat defaults on every issue.
-4. Create an integration branch named `codex/linear-flow/<slug>` and an integration worktree from the latest `origin/develop`. Record the actual starting SHA when creating each worktree. Keep a run record outside the repository containing these SHAs, worktree paths, branch names, and Linear identifiers. Add traceability in Linear startup comments once the issues exist. Specify a version in advance only when reproduction, migration rehearsal, or fixed-version delivery requires it; make any departure from the default baseline explicit.
 
-## Decompose into deliverable slices
+## Task decomposition
 
-Explore the relevant implementation and repository guidance in the integration worktree before drafting children. Use the project's domain vocabulary and existing validation commands.
+Before creating branches, worktrees, or Linear issues, explore the relevant implementation and repository guidance read-only, using the fetched baseline to distinguish it from local changes. Use the project's domain vocabulary and existing validation commands. Form an execution pre-analysis first, then choose the task shape, decomposition, and execution arrangement.
+
+### Pre-analyze and choose the task shape
+
+- For one coherent deliverable, use one execution issue without a wrapper parent. A sentence stating readiness and the first step is enough; reuse the issue's acceptance criteria for completion evidence.
+- For multiple independently verifiable deliverables, use a parent and execution children. Record the overall pre-analysis on the parent; children only carry relevant differences.
+- When an explicit parent already exists, retain its context and ownership rather than creating another wrapper. Reuse the intended execution issue when one already exists.
+
+The readiness judgment is one of: ready to implement, validate a named hypothesis first, or resolve a named decision first. Identify the smallest first delivery or evidence, the execution arrangement, and any applicable compatibility, migration, recovery, or reassessment conditions. Separate slice evidence from integration evidence only when that responsibility needs allocation.
+
+Exploratory validation normally stays as the current issue's first step. Give it a separate issue when its result needs independent review, determines whether to invest further, or becomes an input to other tasks. In either form, name the hypothesis, minimum validation method, and the paths after a positive and a negative result. A disproved hypothesis can be a valid finding; it is not automatically an implementation failure or permission to change scope or close issues early.
+
+Do not interpret the parent's overall judgment as a blanket gate. For a local blocker, name the affected work, whether it blocks start, joint validation, or merge, and the evidence that clears it. If the overall goal, scope, or acceptance remains unclear, report the missing decision before creating resources.
+
+Choose a single agent, limited collaboration, or parallel implementation based on independent work, stable contracts, shared writes, and available tools. Mention reusable tools only when useful. The arrangement does not grant delegation or other authority beyond the request and environment.
+
+### Draft deliverable slices
 
 - Split by the smallest complete, observable behavior, not by database, API, UI, or test layer. A slice crosses only the layers its behavior actually needs and owns its implementation, tests, fixtures, and required configuration.
-- Size each child for one fresh context window with a focused acceptance check. Do not target a task count or split small work merely to create parallelism: one child is valid. Merge fragments that share an acceptance outcome and cannot be verified separately.
+- Size each execution issue for one fresh context window with a focused acceptance check. Do not target a task count or split small work merely to create parallelism. Merge fragments that share an acceptance outcome and cannot be verified separately.
 - Separate prerequisite refactoring only when it is necessary to enable the requested change. For a wide mechanical refactor, expand with a compatible form, migrate callers in verifiable batches, then contract after all migrations. Each batch must keep its focused checks passing.
-- Add a blocking edge only when a child consumes a specific result from another child. Name that result and the phase it blocks, using the dependency rules below. Record edit conflicts separately in the run record: inspect overlapping edit regions and shared interfaces, rather than serializing everything that touches the same file.
+- Add a blocking edge only when a task consumes a specific result from another task. Name that result and the phase it blocks, using the dependency rules below. Record edit conflicts separately as scheduling constraints: inspect overlapping edit regions and shared interfaces, rather than serializing everything that touches the same file.
 
-Before publishing, check that every requested behavior has an acceptance owner, no outcome is duplicated, all prerequisites are included, and the graph is acyclic. A child must be verifiable once its own prerequisites have landed, without waiting for downstream work. Distinguish the existing behavior from the target and retain affected regression constraints. The parent owns outcomes that can only be verified across integrated children. Split oversized children and combine fragments that fail this check.
+A task must be verifiable once its own prerequisites are ready, without waiting for downstream work. Distinguish the existing behavior from the target and retain affected regression constraints. A parent, when present, owns outcomes that can only be verified across integrated children.
 
-Show the proposed children, their outcomes, blocking reasons, and any scheduling constraints, then continue without routine approval. If a critical scope or acceptance decision remains unresolved, stop and report it rather than inventing requirements.
+### Check the draft before creating issues
+
+- Every requested behavior has an acceptance owner, with no duplicate outcomes; all prerequisites are represented and the graph is acyclic.
+- The first delivery has an owning task. Hypothesis validation names the minimum method and both follow-up paths.
+- Every blocker names its actual input, blocked phase, and clearing evidence; the execution arrangement agrees with those phases.
+- Parallel tasks have explicit write ownership for shared files or contracts, with no unresolved edit conflict. Early work names the stable contract and its owner; settle an unresolved contract through a decision or exploratory step before dispatching its consumers.
+- Every acceptance outcome maps to an execution issue or overall acceptance and a locatable validation method. Execution issues cover their own behavior and regressions; cross-task outcomes have an integration validation owner.
+- A single-deliverable draft has no unnecessary parent. Split oversized tasks and combine fragments that cannot be accepted separately.
+
+Repair a draft that fails these checks before publishing. Show the pre-analysis and proposed task shape, outcomes, blocking reasons, and scheduling constraints, then continue without routine approval. If a critical scope or acceptance decision remains unresolved, report it before creating resources rather than inventing requirements.
 
 ## Write focused Linear issues
 
-Use `<计划简称>｜<整体结果>` for the parent and `<计划简称>-<稳定序号>｜<单一交付结果>` for children. Reuse an existing plan shorthand or derive a short domain name from the goal. Keep sequence numbers stable after creation.
+Use `<计划简称>｜<整体结果>` for a parent or standalone execution issue, and `<计划简称>-<稳定序号>｜<单一交付结果>` for children. Reuse an existing plan shorthand or derive a short domain name from the goal. Keep sequence numbers stable after creation.
 
-Use these three required sections for the parent:
+Use this structure for a parent, removing inapplicable optional entries:
 
 ```markdown
 ## 目标
@@ -49,11 +73,18 @@ Use these three required sections for the parent:
 - 来源：[需求、计划或关键决策链接]
 - 共同约束：[仅在存在共享约束时填写]
 
+## 执行预分析
+- 开工判断：[整体判断及依据；局部阻塞明确受影响工作、阶段和解阻证据]
+- 首个交付：[最小闭环，或优先取得的验证证据]
+- 执行安排：[单 Agent、局部协作或并行实现，以及必要的工具复用]
+- 完成证据：[仅在需要划分本票、子任务和集成验证责任时填写]
+- 特殊条件：[适用的兼容、迁移、恢复或重判条件]
+
 ## 整体验收
 - [ ] [合并后才能验证的完整流程或跨任务结果]
 ```
 
-Use these three required sections for each child:
+Use these three required sections for a standalone execution issue or child:
 
 ```markdown
 ## 目标
@@ -68,15 +99,25 @@ Use these three required sections for each child:
 - [ ] [受影响的异常路径或回归约束，按需填写]
 ```
 
-- Keep requirements, implementation plans, and key decisions on the parent; children link to the specific relevant passages. Include enough accessible context to take over the child without the original conversation.
+- Keep requirements, implementation plans, and key decisions on the parent when present; children link to the specific relevant passages. A standalone issue carries its own source references. Include enough accessible context to take over an execution issue without the original conversation.
 - Put exclusions in `范围与边界` only when they prevent likely mistakes or competing ownership. Remove unused optional bullets; do not publish placeholders or empty headings.
-- Add `验证` for specialized checks or when no applicable default exists. Add `依赖说明` for non-default dependency phases. Add contract or migration/rollback sections only when the work needs them.
+- A simple standalone issue can put its one-sentence pre-analysis in `范围与边界` without adding a heading or repeating acceptance evidence.
+- Place task-specific information according to the table below. Do not copy the parent's pre-analysis into every child.
+
+| Information | Location |
+| --- | --- |
+| Start prerequisites, dependency phases, integration conditions, and clearing evidence | `依赖与集成`, when applicable |
+| Shared files, contracts, and write ownership | `范围与边界` |
+| Passing conditions and affected regression constraints | `验收标准` |
+| Independent exploratory validation or a distinct execution arrangement | Add `执行预分析` only when needed |
+
+- Add `验证` for specialized checks or when no applicable default exists. Keep detailed methods there and reference them from pre-analysis instead of duplicating commands or logs. Add contract or migration/rollback sections only when the work needs them.
 - Use Linear's native child list and relations. Do not maintain a second child checklist in the parent. Record shared boundaries and unusual integration order when they affect decisions.
 - Keep routine repository and branch defaults out of individual issues; write exceptions explicitly. Do not add a fixed responsibility/progress section or append execution logs to the description.
 
 ## Define dependency phases
 
-Use native `Blocked by` relations for actual dependencies, and identify the consumed contract, change/PR, or data in the child's scope or dependency notes. An unspecified phase blocks implementation start.
+Use native `Blocked by` relations for actual dependencies, and identify the consumed contract, change/PR, or data, blocked phase, and clearing evidence in `依赖与集成`. An unspecified phase blocks implementation start.
 
 | Phase | Gate and permitted work |
 | --- | --- |
@@ -86,41 +127,59 @@ Use native `Blocked by` relations for actual dependencies, and identify the cons
 
 For a non-default phase, state which prerequisite it applies to, the stable input that permits early work, and exactly what can proceed. Read phases together with the native graph; a pending Linear completion state does not itself block a phase. A prerequisite is integrated and verified only after its merge SHA and all checks required at that phase are recorded as passing. A merge awaiting joint validation cannot release dependent gates.
 
+For an evidence-only prerequisite, record the reviewed finding or decision and its evidence instead of inventing a merge SHA. Clear only the gates whose stated evidence is satisfied. A valid negative finding does not clear a gate that requires a positive result; follow its planned negative path and reassess affected work.
+
 ## Plan validation and evidence
 
 Acceptance says what must be true; validation says how to prove it. Reference a locatable project rule for routine checks rather than duplicating commands on every issue. A bare "use Harness" is insufficient. For specialized checks or missing defaults, specify the method, command and working directory where applicable, relevant environment/data, and required evidence. Use explicit manual evidence when no automated check applies.
 
-Before publishing, resolve the referenced defaults and confirm that commands and scope options exist. Identify any new tests or fixtures as child deliverables. Separate validation into:
+Before publishing, resolve the referenced defaults and confirm that commands and scope options exist. Identify any new tests or fixtures as execution-issue deliverables. Separate validation into:
 
-- **Slice:** the child's behavior and affected regressions, with an explicit baseline or path scope.
+- **Slice:** the execution issue's behavior and affected regressions, with an explicit baseline or path scope.
 - **Integration:** affected behavior, shared interfaces, and interactions after merges.
 - **Final acceptance:** the combined result and all project-required gates on the final candidate before pushing `develop`.
+
+Choose additional validation from actual risks: shared-interface contracts, failure paths, state consistency, compatibility, or migration and recovery where applicable. Do not impose every category on every task. Failed, unavailable, or missing evidence is not a passing result.
 
 Inspect command inclusion relationships before choosing checks. Do not schedule a focused command, a changed check, and a broader wrapper redundantly when the wrapper already provides the same evidence. Use repository-supported slice/range options when suitable; do not hard-code one repository's tooling into this flow.
 
 Record the tested commit SHA, scope, commands, relevant environment/data inputs, results, and log/artifact references in PRs, CI, or Linear comments, with matching pointers in the run record. Reuse passing evidence only when the tested code version, scope, commands, and relevant inputs match. Changes to code, configuration, dependencies, or contracts invalidate affected evidence. Explicit project-required gates and phase requirements take precedence over reuse; never skip them or add unrelated broad checks by default.
+
+## Initialize the integration worktree
+
+Only after the pre-analysis and draft checks pass, create `codex/linear-flow/<slug>` and an integration worktree from the latest fetched `origin/develop`. Confirm the draft against that worktree before publishing. This also applies to a single execution issue; retain the same task isolation, integration, validation, and push lifecycle.
+
+Record the actual starting SHA when creating each worktree. Keep a run record outside the repository containing these SHAs, worktree paths, branch names, Linear identifiers once available, dependency phases, and scheduling constraints. Add traceability in Linear startup comments once the issues exist. Specify a version in advance only when reproduction, migration rehearsal, or fixed-version delivery requires it; make any departure from the default baseline explicit.
 
 ## Publish the Linear task graph
 
 Use the available Linear MCP or API integration. Do not silently fall back to local Markdown.
 
 1. Resolve the Linear team, project, workflow states, and credentials at runtime. If access, configuration, or permissions are missing, stop before creating anything.
-2. Search for an existing parent task with the intended title. Stop on an ambiguous match rather than creating duplicates.
-3. Create one parent and the drafted children in dependency order using the templates and validation rules above.
-4. Create native parent-child and blocking relationships. Map the draft children to returned Linear identifiers in the run record, including their dependency phases and scheduling constraints.
+2. Resolve any explicitly supplied parent or execution issue and search for intended issues before creating duplicates. Stop on an ambiguous match.
+3. For one deliverable, create or reuse one execution issue. For multiple deliverables, create or reuse the parent and create the missing children in dependency order. Keep an existing explicit parent without adding another wrapper. Use the templates and validation rules above.
+4. Create native parent-child relationships only where a parent exists, and native blocking relationships only for real dependencies. Map the draft tasks to returned Linear identifiers in the run record, including dependency phases and scheduling constraints.
 5. Preserve existing Assignees; use real, authorized owners when known. Set Delegate only for a valid Linear agent identity supported by the team. Record local agent identifiers in execution comments instead of inventing Linear identities. Do not create workflow states.
-6. Add startup comments with the actual baseline and branch context; add each child's execution identity and worktree starting SHA when it starts. Move a child to the active state only when implementation starts.
-7. Update comments at implementation completion, verified integration, and waiting for the final push, including available commit/merge SHAs, evidence links, blockers, and the next step. Keep the run record consistent. Link a PR when one exists; direct delivery uses commits, CI, or issue comments and does not require a PR. Leave Linear completion states pending until the final `develop` push succeeds.
+6. Add startup comments with the actual baseline and branch context; add each execution issue's identity and worktree starting SHA when it starts. Move an execution issue to the active state only when its work starts.
+7. Distinguish implementation committed (or evidence recorded), integration verified, and delivery complete. Update comments at the first two milestones and when waiting for the final push, including available commit/merge SHAs, evidence links, blockers, and the next step. Keep the run record consistent. Link a PR when one exists; direct delivery uses commits, CI, or issue comments and does not require a PR. Leave Linear completion states pending until the final `develop` push succeeds.
 
 ## Dispatch and implement
 
 Treat the Linear blocking graph together with the recorded dependency phases as the source of truth. Dispatch when all start dependencies are integrated and verified; enforce joint-validation and merge gates at their respective phases:
 
+- Treat a standalone execution issue as the only execution node; a parent container is not required.
 - Start every agent with a fresh context window and a task-specific worktree and branch based on the current integration tip.
-- Run independent ready children in parallel when their edits and shared interfaces are compatible. Apply the scheduling constraints in the run record to conflicting edits without adding artificial Linear blocking edges.
-- Each agent reads the child and linked context, explores the codebase, runs the checks required by that child and project guidance, and reports its commit, changed paths, check scope, results, and evidence.
-- An agent must not merge to `develop`, push the final branch, delete branches, or modify another agent's worktree.
-- When implementation finishes and merge gates are satisfied, merge its branch into the integration branch with a non-fast-forward merge. Apply the validation plan to the merged result. Joint validation may wait for its prerequisites, but keep the child unverified until all its required checks pass. Record the merge and evidence, update Linear comments, and release newly unblocked phases.
+- Run independent ready tasks in parallel when their edits and shared interfaces are compatible and delegation is authorized and available. Apply the scheduling constraints in the run record to conflicting edits without adding artificial Linear blocking edges.
+- Each agent reads the execution issue and linked context, explores the codebase, and runs its currently executable slice checks. Once implementation and those checks pass, immediately commit that issue's changes in its own branch, with the Linear identifier in the commit message. Report the commit SHA, changed paths, check scope, results, and evidence before handing off or starting another issue.
+- Waiting for joint validation does not delay saving a passing implementation commit, but does not release any dependency gate. Record pending checks explicitly. Evidence-only tasks record their finding without an empty commit. Later repairs use additional commits; do not amend or rewrite commits already cited as evidence.
+- Do not push task or integration branches. An execution agent must not merge to `develop`, push any branch, delete branches, or modify another agent's worktree. Only the coordinator performs final integration and the `develop` push.
+- When implementation finishes and merge gates are satisfied, merge its branch into the integration branch with a non-fast-forward merge. Apply the validation plan to the merged result. Joint validation may wait for its prerequisites, but keep the task unverified until all its required checks pass. Record the merge and evidence, update Linear comments, and release newly unblocked phases.
+
+## Reassess and synchronize execution conditions
+
+Reassess affected work when an issue outgrows one focused context window, a hypothesis is disproved, a contract changes, migration rehearsal fails, or a shared resource becomes unavailable. Pause affected dispatch or phase transitions first. Split or recombine remaining work as needed, preserving existing issue identifiers and completed commit/evidence history and linking replacement work. Update the currently effective pre-analysis, execution arrangement, affected issue fields, dependency phases, native relations, validation responsibilities, and run record before resuming. Recheck acceptance coverage and graph acyclicity after a split. Do not leave the description saying "serial" while scheduling still permits parallel work.
+
+Keep current conclusions in the description and record the reasons and evidence for major changes in comments. Real consumed-output dependencies update native blocking relations; shared-write serialization updates scheduling constraints and ownership, without creating artificial business dependencies. Scope or acceptance changes still require authority. If the authorized update cannot be completed, preserve the proposed change and keep affected transitions paused.
 
 ## Recover within the affected boundary
 
@@ -138,21 +197,30 @@ Do not repeat the same failed attempt without new evidence or a plausible repair
 
 ## Review and integrate
 
-After every child has merged into the integration branch and all its required validation, including joint validation, has passed:
+After every execution task has integrated and all its required validation, including joint validation, has passed (tasks without code changes supply their planned evidence):
 
-1. Fetch again. If `origin/develop` advanced, merge its latest tip into the integration branch with a normal merge, never a rebase. Handle conflicts using the recovery rules and revalidate affected evidence.
-2. Check out or attach the target `develop` worktree from the latest fetched `origin/develop` baseline, then merge the integration branch with a non-fast-forward merge.
-3. Satisfy the parent's overall acceptance and all final project-required gates on this final candidate, using the evidence reuse rules. Record the results and waiting-for-push milestone in Linear comments and the run record.
-4. Push `develop` without force. If the push fails, do not clean up anything.
+### Prepare local develop
+
+- Inspect `git worktree list --porcelain`. Reuse the original checkout when it is on `develop`; otherwise attach an unoccupied local `develop` in a temporary target worktree. If another worktree holds it, inspect that checkout and reuse it only when its ownership and use for this run are established. Never force a second checkout or change the original checkout's other branch.
+- Keep an existing local `develop` at its current tip. If absent, create it from the recorded initial baseline SHA, not a newly fetched tip. Record the target path, starting SHA, and whether this run created the worktree.
+- In an original checkout on `develop`, inspect staged, unstaged, and untracked changes before committing only changes attributable to the current task. Stage explicit paths or hunks, inspect the staged diff, and validate those changes. Never use a blanket add or include unrelated staged changes. If unrelated changes remain, stop before merging and preserve them; do not stash, reset, clean, or discard them to make room. Other reused target worktrees must already be clean.
+- Review `git log origin/develop..develop` against the run record and initial baseline. Confirm those local-only commits belong to the authorized delivery; unknown or unrelated unpushed commits block integration. Record any pre-merge task commit and include its behavior in final validation.
+
+### Merge locally, synchronize, validate, and push
+
+1. In the clean local `develop` worktree, merge `codex/linear-flow/<slug>` with `git merge --no-ff`. Record the task merge SHA. Do not first merge remote updates into the integration branch.
+2. Only after that local merge, fetch `origin` and resolve `origin/develop`. Check `git merge-base --is-ancestor origin/develop develop`: exit 0 means no remote commits need merging, exit 1 requires a normal `git merge --no-edit origin/develop` in the target worktree, and any other error stops the operation. Use explicit fetch and merge rather than a pull that might rebase. Never rebase or force-push.
+3. Revalidate affected behavior after remote merges, conflict resolutions, or repairs. Satisfy the parent's overall acceptance, or the standalone issue's acceptance when no parent exists, and all final project-required gates on the resulting candidate. Apply the evidence reuse rules; record the tested SHA, results, and waiting-for-push milestone in Linear comments and the run record. Failed or pending checks block pushing.
+4. Confirm the target is clean and local `develop` still equals the tested SHA; unexpected local changes pause delivery. Push explicitly with `git push origin develop:develop`, without force. A rejection caused by new remote commits returns to step 2, including validation of the new candidate. Allow at most two additional push attempts (three total). Permission, network, branch-policy, fetch, or unsafe conflict failures are not race retries. On those failures or exhausted retries, preserve all recovery resources and leave Linear completion pending.
 
 ## Cleanup and completion
 
 Only after the `develop` push succeeds:
 
-- mark the child tasks complete, then mark the parent task complete in Linear;
-- remove every task worktree and the integration worktree;
-- delete every local task and integration branch;
-- delete the corresponding remote temporary branches;
-- retain the original user branch and `develop`.
+- mark the execution issues complete, then any parent whose full acceptance is satisfied; in standalone mode complete only that issue, and do not close an existing broader parent with unrelated unfinished work;
+- remove only task, integration, and temporary target worktrees created by this run; never remove a reused or original checkout;
+- delete only this run's merged local task and integration branches;
+- temporary branches are not pushed by this flow; delete a remote counterpart only if the run record proves this run created it under separate authorization and it still points to the recorded delivered commit, otherwise leave it untouched;
+- retain the original user branch, `develop`, and the recovery record.
 
-Report the selected baseline, Linear parent and child identifiers, execution order, merged commits, validation evidence, final `develop` SHA, and cleanup result. If cleanup or Linear updates fail after the code is safely pushed, report the exact remaining resources and continue with no destructive retry.
+Report the selected baseline, execution issue identifiers and parent when present, execution order, merged commits, validation evidence, final `develop` SHA, and cleanup result. If cleanup or Linear updates fail after the code is safely pushed, report the exact remaining resources and continue with no destructive retry.

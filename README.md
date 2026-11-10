@@ -226,8 +226,8 @@ Skills I use daily for code work.
 - **[implement](./skills/engineering/implement/SKILL.md)**: Build the work described by a spec or set of tickets, driving `/tdd` at pre-agreed seams and closing out with `/code-review` before committing.
 - **[implement-spec](./skills/engineering/implement-spec/SKILL.md)**: Implement a whole spec on one integration branch. Works the tickets as a task graph, running implementer subagents across the ready frontier for maximum concurrency, then closes out with `/code-review`.
 - **[git-split-push](./skills/engineering/git-split-push/SKILL.md)**: Analyze current changes into coherent commits, merge moved upstream changes, and push them.
-- **[git-task-worktree](./skills/engineering/git-task-worktree/SKILL.md)**: Implement one task from the latest `develop` baseline without requiring a clean original worktree, then merge and push it.
-- **[linear-develop-flow](./skills/engineering/linear-develop-flow/SKILL.md)**: Publish a Linear task graph from `develop`, implement it across worktrees with focused checks, and merge the result back.
+- **[git-task-worktree](./skills/engineering/git-task-worktree/SKILL.md)**: Implement one isolated task, commit current-task edits in an original `develop` checkout before merging, then synchronize, validate, and push.
+- **[linear-develop-flow](./skills/engineering/linear-develop-flow/SKILL.md)**: Track delivery in Linear with local commits per execution issue, then merge into local `develop`, synchronize, validate, and push.
 - **[wayfinder](./skills/engineering/wayfinder/SKILL.md)**: Plan a huge chunk of work, more than one agent session can hold, as a shared map of decision tickets on the issue tracker, and resolve them one at a time until the way to the destination is clear.
 - **[retro](./skills/engineering/retro/SKILL.md)**: Suggest improvements to the coding agent's environment (navigation, automated checks, coding standards, steering files, tooling) after a session, most severe first.
 

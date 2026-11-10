@@ -32,6 +32,15 @@ The skill's leading word is **flow**, a path *through* the skills rather than a 
 - **Standalones**, which sit off every flow and which you use on their own: the prototype, the questionnaire, the research run.
 - **A vocabulary layer underneath**, the two references the other skills pull in when the words rather than the process are the problem.
 
+For delivery into `develop`, the map has two routes:
+
+| Delivery | Route |
+| --- | --- |
+| One isolated task | [git-task-worktree](https://aihero.dev/skills-git-task-worktree), with verifiable steps in one task branch |
+| Linear tracking | [linear-develop-flow](https://aihero.dev/skills-linear-develop-flow), with one execution issue or a parent and children, and local implementation commits without task-branch pushes |
+
+Both workflows merge into local `develop` before synchronizing newer remote commits, validate the final candidate against required project gates, and then push. An original checkout on `develop` first commits only current-task edits; unrelated edits block integration, while other original branches remain untouched.
+
 ## The phase boundary
 
 The skill's other key idea is the **phase boundary**. A phase is a chunk of work inside a session (the [grilling](https://www.aihero.dev/ai-coding-dictionary/grilling), the implementation, the QA), and the boundary between two of them is the only place the question "what do I do with this context?" belongs. Mid-phase there is nothing to decide: continue, or split what is left into [subagents](https://www.aihero.dev/ai-coding-dictionary/subagent).
