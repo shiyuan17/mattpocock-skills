@@ -37,7 +37,7 @@ For delivery into `develop`, the map has two routes:
 | Delivery | Route |
 | --- | --- |
 | One isolated task | [git-task-worktree](https://aihero.dev/skills-git-task-worktree), with verifiable steps in one task branch |
-| Linear tracking | [linear-develop-flow](https://aihero.dev/skills-linear-develop-flow), with one execution issue or a parent and children, and local implementation commits without task-branch pushes |
+| Linear tracking | [linear-develop-flow](https://aihero.dev/skills-linear-develop-flow), with one execution issue or a parent and children, implemented serially in one delivery worktree by default, with separate commits and acceptance evidence per issue; extra worktrees serve authorized independent groups |
 
 Both workflows merge into local `develop` before synchronizing newer remote commits, validate the final candidate against required project gates, and then push. An original checkout on `develop` first commits only current-task edits; unrelated edits block integration, while other original branches remain untouched.
 

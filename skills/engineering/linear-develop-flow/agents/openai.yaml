@@ -1,5 +1,5 @@
 interface:
   display_name: "Linear Develop Flow"
-  short_description: "Plan Linear tasks and merge worktrees into develop"
+  short_description: "Deliver Linear issues from one shared worktree"
 policy:
   allow_implicit_invocation: false

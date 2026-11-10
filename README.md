@@ -227,7 +227,7 @@ Skills I use daily for code work.
 - **[implement-spec](./skills/engineering/implement-spec/SKILL.md)**: Implement a whole spec on one integration branch. Works the tickets as a task graph, running implementer subagents across the ready frontier for maximum concurrency, then closes out with `/code-review`.
 - **[git-split-push](./skills/engineering/git-split-push/SKILL.md)**: Analyze current changes into coherent commits, merge moved upstream changes, and push them.
 - **[git-task-worktree](./skills/engineering/git-task-worktree/SKILL.md)**: Implement one isolated task, commit current-task edits in an original `develop` checkout before merging, then synchronize, validate, and push.
-- **[linear-develop-flow](./skills/engineering/linear-develop-flow/SKILL.md)**: Track delivery in Linear with local commits per execution issue, then merge into local `develop`, synchronize, validate, and push.
+- **[linear-develop-flow](./skills/engineering/linear-develop-flow/SKILL.md)**: Implement Linear issues serially in one delivery worktree by default, with separate commits and acceptance evidence, then integrate, synchronize, validate, and push `develop`.
 - **[wayfinder](./skills/engineering/wayfinder/SKILL.md)**: Plan a huge chunk of work, more than one agent session can hold, as a shared map of decision tickets on the issue tracker, and resolve them one at a time until the way to the destination is clear.
 - **[retro](./skills/engineering/retro/SKILL.md)**: Suggest improvements to the coding agent's environment (navigation, automated checks, coding standards, steering files, tooling) after a session, most severe first.
 

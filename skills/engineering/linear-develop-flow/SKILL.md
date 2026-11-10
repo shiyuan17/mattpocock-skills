@@ -1,6 +1,6 @@
 ---
 name: linear-develop-flow
-description: Create a baseline worktree, publish a Linear task graph, implement it with parallel or serial agents, and merge the result into develop.
+description: Publish a Linear task graph, implement its issues serially in one delivery worktree by default, and merge the verified result into develop.
 disable-model-invocation: true
 ---
 
@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Run a complete task-graph development flow from the latest `develop` baseline. This skill is user-invoked because it creates external Linear issues, worktrees, branches, merges, pushes, and deletes branches.
 
-Implementation stays in task worktrees. An original checkout on another branch remains untouched. If the original checkout is on `develop`, final integration may use it after committing only current-task changes under the target preparation rules below.
+Implementation stays in one delivery worktree and branch by default, with a separate commit and acceptance evidence for each execution issue. An original checkout on another branch remains untouched. If the original checkout is on `develop`, final integration may use it after committing only current-task changes under the target preparation rules below.
 
 ## Resolve the request
 
@@ -36,7 +36,7 @@ Exploratory validation normally stays as the current issue's first step. Give it
 
 Do not interpret the parent's overall judgment as a blanket gate. For a local blocker, name the affected work, whether it blocks start, joint validation, or merge, and the evidence that clears it. If the overall goal, scope, or acceptance remains unclear, report the missing decision before creating resources.
 
-Choose a single agent, limited collaboration, or parallel implementation based on independent work, stable contracts, shared writes, and available tools. Mention reusable tools only when useful. The arrangement does not grant delegation or other authority beyond the request and environment.
+Default to one executor working serially in dependency order in the delivery worktree. Use independent execution groups only when parallel implementation is authorized, tools are available, and stable contracts and write ownership permit it. A group can handle multiple issues; issue count does not determine worktree count. Mention reusable tools only when useful. The arrangement does not grant delegation or other authority beyond the request and environment.
 
 ### Draft deliverable slices
 
@@ -95,7 +95,7 @@ Use these three required sections for a standalone execution issue or child:
 - 参考：[相关计划段落或契约，按需填写]
 
 ## 验收标准
-- [ ] [给定角色与前置状态下，可观察的通过条件]
+- [ ] [给定角色与前置状态，执行操作或触发事件后，可观察的通过条件]
 - [ ] [受影响的异常路径或回归约束，按需填写]
 ```
 
@@ -111,7 +111,7 @@ Use these three required sections for a standalone execution issue or child:
 | Passing conditions and affected regression constraints | `验收标准` |
 | Independent exploratory validation or a distinct execution arrangement | Add `执行预分析` only when needed |
 
-- Add `验证` for specialized checks or when no applicable default exists. Keep detailed methods there and reference them from pre-analysis instead of duplicating commands or logs. Add contract or migration/rollback sections only when the work needs them.
+- Map each acceptance outcome to a locatable validation method or existing test; a project default is enough only when it proves that outcome. Add `验证` for specialized checks or when no applicable default exists. Keep detailed methods there and reference them from pre-analysis instead of duplicating commands or logs. Add contract or migration/rollback sections only when the work needs them.
 - Use Linear's native child list and relations. Do not maintain a second child checklist in the parent. Record shared boundaries and unusual integration order when they affect decisions.
 - Keep routine repository and branch defaults out of individual issues; write exceptions explicitly. Do not add a fixed responsibility/progress section or append execution logs to the description.
 
@@ -123,33 +123,43 @@ Use native `Blocked by` relations for actual dependencies, and identify the cons
 | --- | --- |
 | 开工 (start, default) | Start only after the prerequisite is integrated and verified. |
 | 联调 (joint validation) | Implement and run independent checks against the named stable contract first. Wait for the prerequisite to be integrated and verified before completing joint validation or reporting verified integration. |
-| 合并 (merge) | Implement and run independent checks first. Merge only after the prerequisite is integrated and verified. |
+| 合并 (merge) | In an authorized isolated execution group, implement and run independent checks first, but wait for verified prerequisites before merging. On the shared delivery branch, wait for this gate before implementation starts. |
 
-For a non-default phase, state which prerequisite it applies to, the stable input that permits early work, and exactly what can proceed. Read phases together with the native graph; a pending Linear completion state does not itself block a phase. A prerequisite is integrated and verified only after its merge SHA and all checks required at that phase are recorded as passing. A merge awaiting joint validation cannot release dependent gates.
+For a non-default phase, state which prerequisite it applies to, the stable input that permits early work, and exactly what can proceed. Prefer completing prerequisites before their consumers in the default serial arrangement. A direct commit on the shared branch must not bypass a merge gate. Read phases together with the native graph; a pending Linear completion state does not itself block a phase.
 
-For an evidence-only prerequisite, record the reviewed finding or decision and its evidence instead of inventing a merge SHA. Clear only the gates whose stated evidence is satisfied. A valid negative finding does not clear a gate that requires a positive result; follow its planned negative path and reassess affected work.
+A prerequisite is integrated and verified only when its result is present in the delivery branch and all checks required at that phase are recorded as passing. Record the implementation commit for a same-branch issue, or the group merge SHA and issue commits for an isolated group. A committed or merged issue awaiting required joint validation remains unverified and cannot release dependent gates.
+
+Before a consumer's gated checks run, confirm that its actual tested revision contains the required prerequisite commits. For an outdated group worktree, merge the required delivery baseline into its branch and rerun affected validation before claiming a pass. Do not reset or rebase recorded history to synchronize it.
+
+For an evidence-only prerequisite, record the reviewed finding or decision and its evidence instead of inventing a commit. Clear only the gates whose stated evidence is satisfied. A valid negative finding does not clear a gate that requires a positive result; follow its planned negative path and reassess affected work.
 
 ## Plan validation and evidence
 
-Acceptance says what must be true; validation says how to prove it. Reference a locatable project rule for routine checks rather than duplicating commands on every issue. A bare "use Harness" is insufficient. For specialized checks or missing defaults, specify the method, command and working directory where applicable, relevant environment/data, and required evidence. Use explicit manual evidence when no automated check applies.
+Acceptance says what must be true; validation says how to prove it. Each acceptance outcome must identify the prerequisite state, action or trigger, observable result, and a locatable method that proves it. Reference a project rule or existing test rather than duplicating routine commands on every issue. A bare "use Harness" is insufficient. For specialized checks or missing defaults, specify the method, command and working directory where applicable, relevant environment/data, and required evidence. Use explicit manual evidence when no automated check applies. For new or changed behavior, evidence must distinguish the baseline from the target; lint and typechecks alone do not prove behavioral acceptance.
 
 Before publishing, resolve the referenced defaults and confirm that commands and scope options exist. Identify any new tests or fixtures as execution-issue deliverables. Separate validation into:
 
-- **Slice:** the execution issue's behavior and affected regressions, with an explicit baseline or path scope.
-- **Integration:** affected behavior, shared interfaces, and interactions after merges.
-- **Final acceptance:** the combined result and all project-required gates on the final candidate before pushing `develop`.
+- **Slice:** the executor checks the issue's behavior and affected regressions, with an explicit baseline or path scope.
+- **Integration:** the coordinator checks affected behavior, shared interfaces, and interactions across issue commits or group merges on the delivery branch.
+- **Final acceptance:** the coordinator checks the combined result and all project-required gates on the final candidate before pushing `develop`.
 
-Choose additional validation from actual risks: shared-interface contracts, failure paths, state consistency, compatibility, or migration and recovery where applicable. Do not impose every category on every task. Failed, unavailable, or missing evidence is not a passing result.
+When required validation must wait, name the pending checks, their executor, the condition for running them, and expected evidence in the handoff comment and run record. The coordinator owns deferred integration checks unless a different executor is named.
+
+Choose additional validation from actual risks: shared-interface contracts, failure paths, state consistency, compatibility, or migration and recovery where applicable. Do not impose every category on every task. Pending, failed, unavailable, or missing evidence is not a passing result. Mock checks prove only their stated scope and cannot stand in for required real joint validation.
 
 Inspect command inclusion relationships before choosing checks. Do not schedule a focused command, a changed check, and a broader wrapper redundantly when the wrapper already provides the same evidence. Use repository-supported slice/range options when suitable; do not hard-code one repository's tooling into this flow.
 
-Record the tested commit SHA, scope, commands, relevant environment/data inputs, results, and log/artifact references in PRs, CI, or Linear comments, with matching pointers in the run record. Reuse passing evidence only when the tested code version, scope, commands, and relevant inputs match. Changes to code, configuration, dependencies, or contracts invalidate affected evidence. Explicit project-required gates and phase requirements take precedence over reuse; never skip them or add unrelated broad checks by default.
+Record the acceptance outcomes covered, actual tested version, scope, commands, relevant environment/data inputs, results, and log/artifact references in PRs, CI, or Linear comments, with matching pointers in the run record. For pre-commit checks, record the base SHA and complete tested changes, including new files. Associate that evidence with the resulting commit only after confirming its contents match the tested state; do not label tests of uncommitted changes with the old `HEAD` alone. An unchanged tested state does not need another run merely because the commit now has a SHA.
 
-## Initialize the integration worktree
+Reuse passing evidence only when the tested contents, scope, commands, and relevant inputs match. Later issues that change relevant code, configuration, dependencies, or contracts invalidate affected evidence, including earlier issues' acceptance. Rerun affected checks and update their current evidence pointers. Explicit project-required gates and phase requirements take precedence over reuse; never skip them or add unrelated broad checks by default.
 
-Only after the pre-analysis and draft checks pass, create `codex/linear-flow/<slug>` and an integration worktree from the latest fetched `origin/develop`. Confirm the draft against that worktree before publishing. This also applies to a single execution issue; retain the same task isolation, integration, validation, and push lifecycle.
+## Initialize the delivery worktree
 
-Record the actual starting SHA when creating each worktree. Keep a run record outside the repository containing these SHAs, worktree paths, branch names, Linear identifiers once available, dependency phases, and scheduling constraints. Add traceability in Linear startup comments once the issues exist. Specify a version in advance only when reproduction, migration rehearsal, or fixed-version delivery requires it; make any departure from the default baseline explicit.
+Only after the pre-analysis and draft checks pass, create `codex/linear-flow/<slug>` and one delivery worktree from the latest fetched `origin/develop`. It is both the default implementation environment and the integration baseline for one or many execution issues. Do not create an additional task worktree for each issue. Confirm the draft against that worktree before publishing.
+
+Record the actual starting SHA when creating each worktree. Keep a run record outside the repository containing these SHAs, worktree paths, branch names, Linear identifiers once available, issue-to-worktree assignments, dependency phases, and scheduling constraints. Add traceability in Linear startup comments once the issues exist. Specify a version in advance only when reproduction, migration rehearsal, or fixed-version delivery requires it; make any departure from the default baseline explicit.
+
+Apply this default to new runs. Resume an existing run using its recorded branches, worktrees, and evidence; do not automatically move changes or consolidate its resources.
 
 ## Publish the Linear task graph
 
@@ -160,20 +170,21 @@ Use the available Linear MCP or API integration. Do not silently fall back to lo
 3. For one deliverable, create or reuse one execution issue. For multiple deliverables, create or reuse the parent and create the missing children in dependency order. Keep an existing explicit parent without adding another wrapper. Use the templates and validation rules above.
 4. Create native parent-child relationships only where a parent exists, and native blocking relationships only for real dependencies. Map the draft tasks to returned Linear identifiers in the run record, including dependency phases and scheduling constraints.
 5. Preserve existing Assignees; use real, authorized owners when known. Set Delegate only for a valid Linear agent identity supported by the team. Record local agent identifiers in execution comments instead of inventing Linear identities. Do not create workflow states.
-6. Add startup comments with the actual baseline and branch context; add each execution issue's identity and worktree starting SHA when it starts. Move an execution issue to the active state only when its work starts.
+6. Add startup comments with the actual worktree baseline and branch context; record each execution issue's identity, assigned worktree, and current branch SHA when it starts. Move an execution issue to the active state only when its work starts.
 7. Distinguish implementation committed (or evidence recorded), integration verified, and delivery complete. Update comments at the first two milestones and when waiting for the final push, including available commit/merge SHAs, evidence links, blockers, and the next step. Keep the run record consistent. Link a PR when one exists; direct delivery uses commits, CI, or issue comments and does not require a PR. Leave Linear completion states pending until the final `develop` push succeeds.
 
 ## Dispatch and implement
 
 Treat the Linear blocking graph together with the recorded dependency phases as the source of truth. Dispatch when all start dependencies are integrated and verified; enforce joint-validation and merge gates at their respective phases:
 
-- Treat a standalone execution issue as the only execution node; a parent container is not required.
-- Start every agent with a fresh context window and a task-specific worktree and branch based on the current integration tip.
-- Run independent ready tasks in parallel when their edits and shared interfaces are compatible and delegation is authorized and available. Apply the scheduling constraints in the run record to conflicting edits without adding artificial Linear blocking edges.
-- Each agent reads the execution issue and linked context, explores the codebase, and runs its currently executable slice checks. Once implementation and those checks pass, immediately commit that issue's changes in its own branch, with the Linear identifier in the commit message. Report the commit SHA, changed paths, check scope, results, and evidence before handing off or starting another issue.
-- Waiting for joint validation does not delay saving a passing implementation commit, but does not release any dependency gate. Record pending checks explicitly. Evidence-only tasks record their finding without an empty commit. Later repairs use additional commits; do not amend or rewrite commits already cited as evidence.
-- Do not push task or integration branches. An execution agent must not merge to `develop`, push any branch, delete branches, or modify another agent's worktree. Only the coordinator performs final integration and the `develop` push.
-- When implementation finishes and merge gates are satisfied, merge its branch into the integration branch with a non-fast-forward merge. Apply the validation plan to the merged result. Joint validation may wait for its prerequisites, but keep the task unverified until all its required checks pass. Record the merge and evidence, update Linear comments, and release newly unblocked phases.
+- Treat a standalone execution issue as the only execution node; a parent container is not required. Default to one executor handling ready issues serially in dependency order in the delivery worktree.
+- Allow only one writer in any worktree at a time. Start every dispatched agent with a fresh context window, but hand it the existing assigned worktree, issue and linked context, run record, and current branch SHA. A fresh context or executor change does not require a fresh worktree.
+- Create isolated execution groups only for authorized parallel work with available tools, compatible edits, and explicit write ownership. Each group gets a branch and worktree based on the current delivery tip and can process multiple issues serially. Apply scheduling constraints to conflicting edits without adding artificial Linear blocking edges. Evidence-only work uses the environment its method requires, without a mandatory dedicated worktree.
+- Each executor reads the issue and linked context, explores the codebase, and runs its currently executable slice checks. Once implementation and those checks pass, immediately commit only that issue's changes on the assigned branch, with the Linear identifier in the commit message. Default serial issues commit directly to the delivery branch without a per-issue merge. Report the commit SHA, changed paths, check scope, results, and evidence before handing off or starting another issue.
+- Before an executor handoff or another issue starts in that worktree, save the current issue's changes under these commit rules and confirm the working tree is clean. Failed checks with unsaved changes keep that worktree occupied; repair within scope rather than mixing in another issue. Never discard changes to make it available.
+- Waiting for joint validation does not delay saving a passing implementation commit, but does not release any dependency gate. Record pending checks and their responsibility as defined above. Independent ready issues may continue from the recorded actual baseline once the worktree is clean; sharing a branch does not inherit another issue's passing status. Evidence-only tasks record their finding without an empty commit. Later repairs use additional commits; do not amend or rewrite commits already cited as evidence.
+- Do not push delivery or group branches. An execution agent must not merge to `develop`, push any branch, delete branches, or modify another executor's worktree. Only the coordinator performs final integration and the `develop` push.
+- For an isolated group, synchronize required prerequisites before gated checks and merge into the delivery branch with a non-fast-forward merge only when every included issue's merge gates are satisfied. In both arrangements, apply the validation plan across issue commits and group merges. Keep each issue unverified until all its required checks, including deferred joint validation, pass. Record the issue commits, group merge when applicable, and evidence; update Linear comments and release only satisfied dependency phases.
 
 ## Reassess and synchronize execution conditions
 
@@ -187,7 +198,7 @@ Preserve worktrees, branches, commits, and the run record on failure. Record the
 
 | Failure | Recovery boundary |
 | --- | --- |
-| Local implementation, check, or command compatibility failure | The current executor diagnoses, repairs within scope, and reruns affected checks. Continue independent ready work. |
+| Local implementation, check, or command compatibility failure | The current executor diagnoses, repairs within scope, and reruns affected checks. Unsaved changes keep that worktree occupied; independent ready work can continue in other authorized worktrees, or after a clean handoff. |
 | Shared environment or service failure | Pause affected tasks and dependency phases. Continue work that does not require the failed resource. |
 | Merge conflict | Freeze merges at the affected shared integration boundary and preserve the conflict state. Resolve only when intent is clear and within scope, then validate. Independent implementation can continue. |
 | Linear graph and run record disagree | Pause affected dispatch and phase transitions. Read the actual relations and notes, reconcile the record, and resume only after consistency is restored. Do not invent or change scope/dependencies without authority. |
@@ -197,7 +208,7 @@ Do not repeat the same failed attempt without new evidence or a plausible repair
 
 ## Review and integrate
 
-After every execution task has integrated and all its required validation, including joint validation, has passed (tasks without code changes supply their planned evidence):
+After every execution issue's result is present on the delivery branch and all its required validation, including joint validation and any affected earlier acceptance, has passed (tasks without code changes supply their planned evidence):
 
 ### Prepare local develop
 
@@ -208,7 +219,7 @@ After every execution task has integrated and all its required validation, inclu
 
 ### Merge locally, synchronize, validate, and push
 
-1. In the clean local `develop` worktree, merge `codex/linear-flow/<slug>` with `git merge --no-ff`. Record the task merge SHA. Do not first merge remote updates into the integration branch.
+1. In the clean local `develop` worktree, merge `codex/linear-flow/<slug>` with `git merge --no-ff`. Record the delivery merge SHA. Do not first merge remote updates into the delivery branch.
 2. Only after that local merge, fetch `origin` and resolve `origin/develop`. Check `git merge-base --is-ancestor origin/develop develop`: exit 0 means no remote commits need merging, exit 1 requires a normal `git merge --no-edit origin/develop` in the target worktree, and any other error stops the operation. Use explicit fetch and merge rather than a pull that might rebase. Never rebase or force-push.
 3. Revalidate affected behavior after remote merges, conflict resolutions, or repairs. Satisfy the parent's overall acceptance, or the standalone issue's acceptance when no parent exists, and all final project-required gates on the resulting candidate. Apply the evidence reuse rules; record the tested SHA, results, and waiting-for-push milestone in Linear comments and the run record. Failed or pending checks block pushing.
 4. Confirm the target is clean and local `develop` still equals the tested SHA; unexpected local changes pause delivery. Push explicitly with `git push origin develop:develop`, without force. A rejection caused by new remote commits returns to step 2, including validation of the new candidate. Allow at most two additional push attempts (three total). Permission, network, branch-policy, fetch, or unsafe conflict failures are not race retries. On those failures or exhausted retries, preserve all recovery resources and leave Linear completion pending.
@@ -218,9 +229,9 @@ After every execution task has integrated and all its required validation, inclu
 Only after the `develop` push succeeds:
 
 - mark the execution issues complete, then any parent whose full acceptance is satisfied; in standalone mode complete only that issue, and do not close an existing broader parent with unrelated unfinished work;
-- remove only task, integration, and temporary target worktrees created by this run; never remove a reused or original checkout;
-- delete only this run's merged local task and integration branches;
+- remove only delivery, group, and temporary target worktrees created by this run; for resumed legacy runs, include their recorded task/integration worktrees, but never a reused or original checkout;
+- delete only this run's merged local delivery/group branches, or recorded task/integration branches in a resumed legacy run;
 - temporary branches are not pushed by this flow; delete a remote counterpart only if the run record proves this run created it under separate authorization and it still points to the recorded delivered commit, otherwise leave it untouched;
 - retain the original user branch, `develop`, and the recovery record.
 
-Report the selected baseline, execution issue identifiers and parent when present, execution order, merged commits, validation evidence, final `develop` SHA, and cleanup result. If cleanup or Linear updates fail after the code is safely pushed, report the exact remaining resources and continue with no destructive retry.
+Report the selected baseline, execution issue identifiers and parent when present, execution order, per-issue commits or findings, group and delivery merges when applicable, validation evidence, final `develop` SHA, and cleanup result. If cleanup or Linear updates fail after the code is safely pushed, report the exact remaining resources and continue with no destructive retry.
