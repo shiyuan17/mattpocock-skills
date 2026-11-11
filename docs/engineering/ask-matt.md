@@ -39,7 +39,7 @@ For delivery into `develop`, the map has two routes:
 | One isolated task | [git-task-worktree](https://aihero.dev/skills-git-task-worktree), with verifiable steps in one task branch |
 | Linear tracking | [linear-develop-flow](https://aihero.dev/skills-linear-develop-flow), with one execution issue or a parent and children, implemented serially in one delivery worktree by default, with separate commits and acceptance evidence per issue; extra worktrees serve authorized independent groups |
 
-Both workflows merge into local `develop` before synchronizing newer remote commits, validate the final candidate against required project gates, and then push. An original checkout on `develop` first commits only current-task edits; unrelated edits block integration, while other original branches remain untouched.
+Both workflows resolve gate meaning and command inclusion from the actual project scripts, preview long-check scope, and distinguish business failures from tool or environment faults before retrying. They merge into local `develop` before synchronizing newer remote commits, validate the final candidate against required project gates, and then push. Evidence follows content identity, so a same-tree merge can reuse exact checks while changed inputs refresh affected checks. An original checkout on `develop` first commits only current-task edits; unrelated edits block integration, while other original branches remain untouched.
 
 ## The phase boundary
 

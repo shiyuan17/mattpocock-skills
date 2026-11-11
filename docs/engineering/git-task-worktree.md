@@ -31,7 +31,7 @@ The task branch merges into local `develop` with a dedicated merge commit before
 - A `develop` checked out elsewhere is located and checked for ownership before reuse; it is never forcibly checked out twice.
 - A push rejected because the remote advanced allows up to two additional attempts, each after synchronization and validation. Other failures preserve recovery resources.
 
-Recorded evidence identifies the tested contents, scope, commands, environment, and result. Before committing, it identifies the base and complete changes; it is associated with a commit only when the contents match. Remote merges and repairs require affected checks again, and required final gates apply to the resulting candidate. Pushing requires a clean target still pointing to the tested commit. Local implementation or check failures can be repaired within scope; unclear conflicts, missing permissions, or shared environment faults pause the affected work.
+Recorded evidence identifies the tested content, scope, commands, environment, and result. A clean candidate is identified by its Git tree; uncommitted input records the base SHA, `headTree`, and an input digest. A new commit SHA with the same tested tree can reuse exact evidence, while a changed tree or input requires affected checks again. Pushing requires a clean target still pointing to the tested commit. Local implementation or check failures can be repaired within scope; tool faults, unclear conflicts, missing permissions, or shared environment failures pause the affected work until the cause is understood.
 
 ## Common questions
 
@@ -41,7 +41,7 @@ The task worktree starts from `origin/develop` without copying them. If your ori
 
 **Does it run the whole repository test suite?**
 
-It prefers checks covering the changed behavior, but runs repository-wide checks when project guidance requires them. Before a long check, it inspects the actual paths, expansion reasons, and commands. Temporary browser artifacts should not silently turn a focused check into a full suite. A supported preview explains the scope but does not prove acceptance.
+It prefers checks covering the changed behavior, but runs repository-wide checks when project guidance requires them. Command and gate names are not trusted as coverage descriptions: the skill reads project scripts and classifies direct, affected, aggregate, and complete-final checks. Before a long check, it inspects the actual paths, inclusions and exclusions, expansion reasons, command, arguments, and working directory. Temporary artifacts should not silently turn a focused check into a full suite. A supported preview explains the scope but does not prove acceptance.
 
 **Why can validation take so long, and will it repeat everything?**
 
@@ -49,9 +49,13 @@ Broad wrappers can already include focused checks. The flow inspects that relati
 
 After a failure, it verifies the repaired check first and records why any whole-suite rerun is needed. A check taking longer than usual prompts inspection of progress and resource contention, not an automatic restart or weaker gate. Normally progressing checks continue without a universal timeout.
 
+**Can a merge or commit reuse existing validation evidence?**
+
+Yes when the tested content identity still matches. A merge can create a different commit SHA while preserving the tree, so exact evidence remains valid if scope, commands, relevant inputs, and environment also match. If the tree or any relevant input changed, the skill reruns affected checks rather than treating the new SHA as automatically equivalent.
+
 **What survives a long session or context compaction?**
 
-The external recovery note records the current step and code state, passed and pending checks, logs, live check sessions, and services started by the run. Resumption reconciles that record with the checkout and running checks, retaining valid findings rather than repeating the entire investigation.
+The external recovery note records the current step and code state, tree or dirty-input identity, passed and pending checks, complete log locations, live check sessions, and services started by the run. It is updated after each large vertical slice. Resumption reconciles that record with the checkout and running checks, retaining valid findings rather than repeating the entire investigation.
 
 **Does it leave the task branch around after merging?**
 
@@ -68,7 +72,9 @@ No. Steps belong to one coherent task and stay in its single task worktree and b
 - Larger tasks show verifiable steps that cover the acceptance criteria, with no extra task branches or tickets.
 - Focused checks run against the task worktree and, when needed, the integrated branch.
 - Long checks show their actual scope and expansion reasons before starting; whole-suite reruns have a recorded reason.
+- Tool or dependency faults preserve their complete logs before any retry; a failed long command is not mechanically restarted.
 - A resumed run identifies pending checks and existing live sessions without restarting completed work.
+- A merged candidate reuses evidence when its tree and inputs match, and refreshes only affected evidence when they do not.
 - `develop` receives the task merge before newer remote commits are merged and is pushed without force after final acceptance and required project gates pass.
 - Remote competition triggers at most two synchronization-and-validation retries.
 - Temporary resources created by the run disappear only after a successful push; reused checkouts and unrelated work remain.
