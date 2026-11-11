@@ -20,7 +20,7 @@ The repository must expose a reachable `origin/develop` ref and allow ordinary p
 
 The skill creates `codex/task/<slug>` from `origin/develop` and keeps implementation and slice checks inside that worktree. Final integration uses local `develop`, reusing a suitable checkout or creating a temporary target worktree. It never copies or cleans the original checkout.
 
-Simple changes go directly to implementation. Larger tasks get a short sequence of observable outcomes and focused checks, shown before implementation and executed without routine approval. Every acceptance outcome has a step and validation method, including outcomes requiring the complete task. Each step keeps the related implementation and tests together, and all steps contribute to one final task implementation commit. Evidence-only work does not create an empty commit. Unrelated tasks are reported as a mismatch; they are not automatically turned into a task graph.
+Simple changes go directly to implementation. Larger tasks get a short sequence of observable outcomes and focused checks, shown before implementation and executed without routine approval. The first complete behavior reaches its required real environment early, after checking dependencies, credentials, account roles, ports, and allowed origins. Unavailable environments leave specific acceptance checks pending while independent work continues. Every acceptance outcome has a step and validation method, including outcomes requiring the complete task. Each step keeps the related implementation and tests together, and all steps contribute to one final task implementation commit. Evidence-only work does not create an empty commit. Unrelated tasks are reported as a mismatch; they are not automatically turned into a task graph.
 
 ## Local develop before remote synchronization
 
@@ -31,7 +31,7 @@ The task branch merges into local `develop` with a dedicated merge commit before
 - A `develop` checked out elsewhere is located and checked for ownership before reuse; it is never forcibly checked out twice.
 - A push rejected because the remote advanced allows up to two additional attempts, each after synchronization and validation. Other failures preserve recovery resources.
 
-Recorded evidence identifies the tested commit, scope, commands, environment, and result. Remote merges and repairs require affected checks again, and required final gates apply to the resulting candidate. Pushing requires a clean target still pointing to the tested commit. Local implementation or check failures can be repaired within scope; unclear conflicts, missing permissions, or shared environment faults pause the affected work.
+Recorded evidence identifies the tested contents, scope, commands, environment, and result. Before committing, it identifies the base and complete changes; it is associated with a commit only when the contents match. Remote merges and repairs require affected checks again, and required final gates apply to the resulting candidate. Pushing requires a clean target still pointing to the tested commit. Local implementation or check failures can be repaired within scope; unclear conflicts, missing permissions, or shared environment faults pause the affected work.
 
 ## Common questions
 
@@ -41,7 +41,17 @@ The task worktree starts from `origin/develop` without copying them. If your ori
 
 **Does it run the whole repository test suite?**
 
-It prefers checks covering the changed behavior, but runs repository-wide checks when project guidance requires them. It avoids unrelated suites and reuses still-valid evidence without skipping required final gates.
+It prefers checks covering the changed behavior, but runs repository-wide checks when project guidance requires them. Before a long check, it inspects the actual paths, expansion reasons, and commands. Temporary browser artifacts should not silently turn a focused check into a full suite. A supported preview explains the scope but does not prove acceptance.
+
+**Why can validation take so long, and will it repeat everything?**
+
+Broad wrappers can already include focused checks. The flow inspects that relationship and chooses commands that cover acceptance without scheduling the same evidence twice. Formatting, affected tests, and contract consistency come before expensive suites. A supported supplementary command can extend valid evidence, but its success alone is not full acceptance.
+
+After a failure, it verifies the repaired check first and records why any whole-suite rerun is needed. A check taking longer than usual prompts inspection of progress and resource contention, not an automatic restart or weaker gate. Normally progressing checks continue without a universal timeout.
+
+**What survives a long session or context compaction?**
+
+The external recovery note records the current step and code state, passed and pending checks, logs, live check sessions, and services started by the run. Resumption reconciles that record with the checkout and running checks, retaining valid findings rather than repeating the entire investigation.
 
 **Does it leave the task branch around after merging?**
 
@@ -57,6 +67,8 @@ No. Steps belong to one coherent task and stay in its single task worktree and b
 - The task branch contains one clear implementation commit with the task-related changes.
 - Larger tasks show verifiable steps that cover the acceptance criteria, with no extra task branches or tickets.
 - Focused checks run against the task worktree and, when needed, the integrated branch.
+- Long checks show their actual scope and expansion reasons before starting; whole-suite reruns have a recorded reason.
+- A resumed run identifies pending checks and existing live sessions without restarting completed work.
 - `develop` receives the task merge before newer remote commits are merged and is pushed without force after final acceptance and required project gates pass.
 - Remote competition triggers at most two synchronization-and-validation retries.
 - Temporary resources created by the run disappear only after a successful push; reused checkouts and unrelated work remain.

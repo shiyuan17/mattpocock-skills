@@ -30,11 +30,15 @@ If the input contains unrelated tasks rather than one coherent deliverable, repo
 
 Explore the relevant code and repository guidance in the task worktree. For a simple change, proceed directly to implementation without manufacturing a step list.
 
-For a larger task, show a short sequence of steps, each naming an observable outcome and how to verify it, then continue without routine approval. Order steps by actual prerequisites. Keep the implementation, tests, fixtures, and required configuration for each behavior together, rather than making separate steps for each technical layer.
+For a larger task, show a short sequence of steps, each naming an observable outcome and how to verify it, then continue without routine approval. Order steps by actual prerequisites and exercise the first complete behavior in its required real environment early. Keep the implementation, tests, fixtures, and required configuration for each behavior together, rather than making separate steps for each technical layer.
 
 Map every acceptance outcome to a step and a locatable validation method, including outcomes that require the complete task. Check coverage without duplicate work or unrelated deliverables. Use evidence that distinguishes the baseline from the target for new or changed behavior, and preserve already-working behavior as regression constraints. Resolve uncertain shared contracts before implementing against them. If exploration exposes a critical scope or acceptance ambiguity, stop and report it rather than guessing.
 
 These are implementation steps within one task, not independently dispatched tickets. Keep every step in the same task worktree and branch, verify each outcome as it is implemented, and retain one final task implementation commit after its applicable checks pass when there are task changes.
+
+Resolve validation commands and their inclusion relationships from project scripts before scheduling them. Choose the smallest combination covering acceptance and required gates; do not run a wrapper and its constituent checks again on the same state. Use a supported supplementary check with matching prior evidence when appropriate, without treating that check alone as complete acceptance.
+
+Before implementation depends on an environment, check the required tools, dependencies, credential availability, account roles, service ports, and allowed origins. Record availability without secret values. If unavailable, name the affected acceptance and recovery condition and continue independent work.
 
 ## Implement and verify
 
@@ -42,11 +46,15 @@ Work only in the task worktree:
 
 - Keep implementation, tests, fixtures, and required configuration in the same task branch.
 - Prefer checks directly covering the changed behavior, and also run project-required gates, including repository-wide tests, lint, or typechecks when explicitly required. Do not add unrelated suites or reviews.
-- Verify each slice as implemented, affected interactions after integration, and overall acceptance plus required gates on the final candidate before pushing.
+- Verify each slice as implemented, affected interactions after integration, and overall acceptance plus required gates on the final candidate before pushing. Run formatting, lint, affected tests, and contract consistency checks before expensive broad suites; synchronize generated artifacts and affected contract assertions first.
+- Before a long check, inspect its actual path scope, expansion reasons, and commands using supported previews or command/scope output. Keep temporary artifacts outside automatic discovery where supported, preserving genuine source changes and unknown-path safeguards. A preview is not passing evidence.
+- For required browser acceptance, stabilize identities, fixtures, and individual interactions before the complete multi-account journey. Use run-specific data identifiers and wait for the actual transaction response before asserting final state.
 - Choose additional checks from actual risks, such as shared-interface contracts, failure paths, state consistency, compatibility, or migration and recovery. Use explicit manual evidence where automation does not apply.
 - Create one clear task implementation commit after its applicable checks pass. Evidence-only work records its result without an empty commit. Later integration repairs use additional commits rather than rewriting recorded evidence.
 
-Record the tested commit SHA, changed paths, validation scope, commands and working directory, relevant environment/data, results, and evidence references in the recovery note. Resolve commands and scope options from actual project guidance. Avoid redundant commands when a broader check already supplies the same evidence. Reuse evidence only when the tested code, scope, commands, and relevant inputs still match; failed, unavailable, or missing evidence is not a pass. Final project-required gates apply to the final candidate. Do not push the task branch unless the user explicitly asks for it.
+Record the tested commit SHA, changed paths, validation scope, commands and working directory, relevant environment/data, results, and evidence references in the recovery note. For pre-commit checks, identify the base and complete tested changes, then associate them with the implementation commit only after its contents match. Keep the current step, code state, passed and pending checks, log locations, live process/session identifiers, and services started by this run current. After context compaction or resumption, reconcile that record with the checkout and running checks before continuing; reuse valid findings instead of repeating full exploration.
+
+Reuse evidence only when the tested code, scope, commands, and relevant inputs still match; failed, unavailable, or missing evidence is not a pass. Final project-required gates apply to the final candidate. Do not push the task branch unless the user explicitly asks for it.
 
 ## Integrate into develop
 
@@ -76,7 +84,9 @@ After the `develop` push succeeds:
 
 ## Recover within scope
 
-Repair local implementation or check failures within the task scope and rerun affected checks. Revisit the remaining steps when a hypothesis fails or a step becomes too large, retaining completed evidence and updating acceptance coverage before continuing. A newly discovered set of independent deliverables is a task-shape mismatch to report, not authority to create Linear issues.
+Repair local implementation or check failures within the task scope and verify the failed check first, then choose reruns from the actual impact and project requirements. Record why a whole-suite rerun is needed, such as changed relevant contents, invalidated evidence, or a required final gate; do not automatically restart every command. Revisit the remaining steps when a hypothesis fails or a step becomes too large, retaining completed evidence and updating acceptance coverage before continuing. A newly discovered set of independent deliverables is a task-shape mismatch to report, not authority to create Linear issues.
+
+When a check exceeds its historical duration, inspect process activity, log progress, and resource contention. Continue a normally progressing check; elapsed time alone is not failure or permission to lower gates. Do not impose a universal timeout or start concurrent checks that contend for the same build directory.
 
 Shared environment failures pause the checks they affect. Resolve merge conflicts only when intent is clear and within scope, then validate; preserve unsafe or ambiguous conflict states. Missing permissions or critical decisions stop affected work. Do not repeat a failed attempt without new evidence or a plausible repair, and never lower acceptance gates.
 

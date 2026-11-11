@@ -137,7 +137,7 @@ For an evidence-only prerequisite, record the reviewed finding or decision and i
 
 Acceptance says what must be true; validation says how to prove it. Each acceptance outcome must identify the prerequisite state, action or trigger, observable result, and a locatable method that proves it. Reference a project rule or existing test rather than duplicating routine commands on every issue. A bare "use Harness" is insufficient. For specialized checks or missing defaults, specify the method, command and working directory where applicable, relevant environment/data, and required evidence. Use explicit manual evidence when no automated check applies. For new or changed behavior, evidence must distinguish the baseline from the target; lint and typechecks alone do not prove behavioral acceptance.
 
-Before publishing, resolve the referenced defaults and confirm that commands and scope options exist. Identify any new tests or fixtures as execution-issue deliverables. Separate validation into:
+Before publishing, resolve the referenced defaults and confirm that commands and scope options exist. Check tools, dependencies, credential availability, account roles, service ports, and allowed origins before implementation depends on that environment; record availability without secret values. Name affected acceptance and recovery conditions for unavailable environments and continue independent work. Identify any new tests or fixtures as execution-issue deliverables. Separate validation into:
 
 - **Slice:** the executor checks the issue's behavior and affected regressions, with an explicit baseline or path scope.
 - **Integration:** the coordinator checks affected behavior, shared interfaces, and interactions across issue commits or group merges on the delivery branch.
@@ -147,7 +147,11 @@ When required validation must wait, name the pending checks, their executor, the
 
 Choose additional validation from actual risks: shared-interface contracts, failure paths, state consistency, compatibility, or migration and recovery where applicable. Do not impose every category on every task. Pending, failed, unavailable, or missing evidence is not a passing result. Mock checks prove only their stated scope and cannot stand in for required real joint validation.
 
-Inspect command inclusion relationships before choosing checks. Do not schedule a focused command, a changed check, and a broader wrapper redundantly when the wrapper already provides the same evidence. Use repository-supported slice/range options when suitable; do not hard-code one repository's tooling into this flow.
+Resolve command inclusion relationships from project scripts before choosing the smallest combination covering acceptance and required gates. Do not schedule a focused command, a changed check, and a broader wrapper redundantly when the wrapper already provides the same evidence. Use a supported supplementary check with matching prior evidence when appropriate, without treating that check alone as complete acceptance. Use repository-supported slice/range options when suitable; do not hard-code one repository's tooling into this flow.
+
+Before a long check, inspect its actual path scope, expansion reasons, and commands using supported previews or command/scope output. Keep temporary artifacts outside automatic discovery where supported, preserving genuine source changes and unknown-path safeguards. A preview is not passing evidence.
+
+Exercise the first complete behavior in its required real environment early. Run formatting, lint, affected tests, and contract consistency checks before expensive broad suites; synchronize generated artifacts and affected contract assertions first. For required browser acceptance, stabilize identities, fixtures, and individual interactions before the complete multi-account journey. Use run-specific data identifiers and wait for actual transaction responses before final-state assertions.
 
 Record the acceptance outcomes covered, actual tested version, scope, commands, relevant environment/data inputs, results, and log/artifact references in PRs, CI, or Linear comments, with matching pointers in the run record. For pre-commit checks, record the base SHA and complete tested changes, including new files. Associate that evidence with the resulting commit only after confirming its contents match the tested state; do not label tests of uncommitted changes with the old `HEAD` alone. An unchanged tested state does not need another run merely because the commit now has a SHA.
 
@@ -159,7 +163,7 @@ Only after the pre-analysis and draft checks pass, create `codex/linear-flow/<sl
 
 Record the actual starting SHA when creating each worktree. Keep a run record outside the repository containing these SHAs, worktree paths, branch names, Linear identifiers once available, issue-to-worktree assignments, dependency phases, and scheduling constraints. Add traceability in Linear startup comments once the issues exist. Specify a version in advance only when reproduction, migration rehearsal, or fixed-version delivery requires it; make any departure from the default baseline explicit.
 
-Apply this default to new runs. Resume an existing run using its recorded branches, worktrees, and evidence; do not automatically move changes or consolidate its resources.
+Keep the current issue/step, code state, passed and pending checks, log locations, live process/session identifiers, and services started by this run current in the run record. Apply this default to new runs. After context compaction or resumption, reconcile the record with the checkout and running checks before continuing; reuse valid findings instead of repeating full exploration. Resume an existing run using its recorded branches, worktrees, and evidence; do not automatically move changes or consolidate its resources.
 
 ## Publish the Linear task graph
 
@@ -198,13 +202,15 @@ Preserve worktrees, branches, commits, and the run record on failure. Record the
 
 | Failure | Recovery boundary |
 | --- | --- |
-| Local implementation, check, or command compatibility failure | The current executor diagnoses, repairs within scope, and reruns affected checks. Unsaved changes keep that worktree occupied; independent ready work can continue in other authorized worktrees, or after a clean handoff. |
+| Local implementation, check, or command compatibility failure | The current executor diagnoses, repairs within scope, and verifies the failed check first, then selects reruns from the impact and project requirements. Record the reason for each whole-suite rerun instead of automatically restarting every command. Unsaved changes keep that worktree occupied; independent ready work can continue in other authorized worktrees, or after a clean handoff. |
 | Shared environment or service failure | Pause affected tasks and dependency phases. Continue work that does not require the failed resource. |
 | Merge conflict | Freeze merges at the affected shared integration boundary and preserve the conflict state. Resolve only when intent is clear and within scope, then validate. Independent implementation can continue. |
 | Linear graph and run record disagree | Pause affected dispatch and phase transitions. Read the actual relations and notes, reconcile the record, and resume only after consistency is restored. Do not invent or change scope/dependencies without authority. |
 | Missing permission, critical requirement/contract decision, or an unsafe conflict | Report the exact blocker and required decision. Stop affected work rather than expanding authority; stop the whole flow only when the boundary genuinely affects it all. |
 
-Do not repeat the same failed attempt without new evidence or a plausible repair. When no safe in-scope repair remains, report the blocker, preserve recovery information, and continue independent work. When Linear is unavailable, preserve updates locally and pause transitions that require an authoritative graph or Linear mutation until access returns. Recovering from failure never lowers acceptance gates.
+When a check exceeds its historical duration, inspect process activity, log progress, and resource contention. Continue a normally progressing check; elapsed time alone is not failure or permission to lower gates. Do not impose a universal timeout or start concurrent checks that contend for the same build directory.
+
+Do not repeat the same failed attempt without new evidence or a plausible repair. Whole-suite reruns need a reason such as changed relevant contents, invalidated evidence, or a required final gate. When no safe in-scope repair remains, report the blocker, preserve recovery information, and continue independent work. When Linear is unavailable, preserve updates locally and pause transitions that require an authoritative graph or Linear mutation until access returns. Recovering from failure never lowers acceptance gates.
 
 ## Review and integrate
 

@@ -50,7 +50,7 @@ Issues share the delivery worktree by default, with one writer at a time. Each i
 
 Each executor checks its slice; the coordinator owns cross-issue integration and final acceptance unless another executor is named for a deferred check. Waiting for joint validation does not delay a passing implementation commit. The handoff records pending checks, who runs them, their trigger, and required evidence. A clean worktree can take the next independent issue, recording its actual baseline without inheriting a previous issue's passing status.
 
-Validation covers each slice, affected interactions across commits or merges, and overall acceptance plus all project-required gates on the final candidate. Behavioral evidence distinguishes the baseline from the target; lint and typechecks alone do not prove it. Mock checks cannot replace required real joint validation. Additional checks follow actual risks, such as contracts, failure paths, compatibility, or migration recovery. Pending, missing, unavailable, or failed checks cannot count as a pass.
+Validation covers each slice, affected interactions across commits or merges, and overall acceptance plus all project-required gates on the final candidate. Dependencies, credential availability, account roles, ports, and allowed origins are checked before implementation depends on them. The first complete behavior reaches its required real environment early, while unavailable environments leave specific checks pending rather than stopping independent work. Behavioral evidence distinguishes the baseline from the target; lint and typechecks alone do not prove it. Mock checks cannot replace required real joint validation. Additional checks follow actual risks, such as contracts, failure paths, compatibility, or migration recovery. Pending, missing, unavailable, or failed checks cannot count as a pass.
 
 Evidence links each acceptance outcome to the actual tested contents, scope, commands, relevant inputs, and results. Pre-commit evidence identifies the base and complete tested changes, then links to the resulting commit only if its contents match. An unchanged tested state needs no repeat merely to acquire a commit SHA. Later issues that alter relevant code, configuration, dependencies, or contracts require affected acceptance checks again, including earlier issues, with updated evidence pointers. Required final gates still apply.
 
@@ -99,7 +99,17 @@ No. The executor repairs a local implementation or check failure and reruns affe
 
 **Does it run the whole repository test suite?**
 
-It follows the repository's required gates. Routine methods reference actual project guidance; specialized checks state the necessary method, environment, and data. Broader checks run when required, without adding unrelated suites or repeating a check already covered by another command on the same version and scope.
+It follows the repository's required gates. Routine methods reference actual project guidance; specialized checks state the necessary method, environment, and data. Before long checks, it inspects actual paths, expansion reasons, and commands so temporary artifacts do not silently expand the scope. A preview is not acceptance evidence. Broader checks run when required, without adding unrelated suites or repeating a check already covered by another command on the same version and scope.
+
+**Why can validation take so long, and will it repeat everything?**
+
+The flow checks which commands contain other checks before scheduling them. Formatting, affected tests, and contract consistency come before expensive suites. Supported supplementary commands can extend valid prior evidence without making their own success count as complete acceptance.
+
+After a failure, the executor verifies the repaired check first and records why any whole-suite rerun is needed. A check taking longer than usual prompts inspection of progress and resource contention. Normally progressing checks continue, without a universal timeout or overlapping checks that compete for the same build directory.
+
+**How does a resumed run avoid starting over?**
+
+The run record keeps the current issue and step, code state, passed and pending checks, logs, live check sessions, and services started by the run. Resumption reconciles those facts with the checkout before continuing. An issue handoff still requires the existing commit, clean worktree, and single-writer rules; valid evidence is reused only while its relevant inputs match.
 
 **Will a small change become a long list of layer-by-layer tickets?**
 
@@ -116,6 +126,8 @@ No. A simple change uses one execution issue with a brief pre-analysis and no un
 - Handoffs name pending checks, their executor, and the condition for running them; failed checks never appear as acceptance passes.
 - Dependencies unlock after verified results enter the delivery branch, and consumer checks contain required prerequisite commits; Linear tasks close only after the successful `develop` push.
 - Changes affecting earlier acceptance have refreshed evidence before final delivery.
+- Long checks show actual scope and expansion reasons before starting; whole-suite reruns have a recorded reason.
+- Resumption identifies pending checks and live sessions without repeating completed exploration.
 - Milestone comments link implementation, integration, and validation evidence without requiring a PR.
 - Local failures are repaired without stopping independent work, and final acceptance includes every required gate.
 - Reassessment updates actual execution conditions before affected work resumes, not just the prose describing them.
