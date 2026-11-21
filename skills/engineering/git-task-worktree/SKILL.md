@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Implement one task in an isolated worktree based on the latest `origin/develop`, then merge the task branch back into `develop`, push it, and clean up the temporary resources. This skill is deliberately user-invoked because it creates branches, commits, worktrees, merges, pushes, and deletes remote branches.
 
-Implementation stays in the task worktree. An original checkout on another branch remains untouched. If the original checkout is on `develop`, final integration may use it after committing only current-task changes under the target preparation rules below.
+Implementation stays in the task worktree. An original checkout on another branch remains untouched. Final integration can set aside unrelated edits in an authorized `develop` checkout under the target preparation rules below.
 
 ## Resolve the task
 
@@ -24,7 +24,7 @@ If the input contains unrelated tasks rather than one coherent deliverable, repo
 2. Confirm that `origin/develop` resolves to a commit and record that initial baseline SHA. If it does not, stop without creating branches.
 3. Derive a short slug and create `codex/task/<slug>` from `origin/develop`.
 4. Create a task worktree outside the original checkout. Record the baseline SHA, task branch, worktree path, and task source in a recovery note outside the repository.
-5. Do not copy, stash, reset, clean, or discard the original checkout's changes.
+5. Leave the original checkout's changes untouched during setup and implementation.
 
 ## Plan verifiable steps
 
@@ -62,13 +62,16 @@ Reuse evidence only when the tested content identity, scope, commands, and relev
 
 - Inspect `git worktree list --porcelain`. Reuse the original checkout when it is on `develop`; otherwise attach an unoccupied local `develop` in a temporary target worktree. If another worktree holds it, inspect that checkout and reuse it only when its ownership and use for this run are established. Never force a second checkout or change the original checkout's other branch.
 - Keep an existing local `develop` at its current tip. If absent, create it from the recorded initial baseline SHA, not a newly fetched tip. Record the target path, starting SHA, and whether this run created the worktree.
-- In an original checkout on `develop`, inspect staged, unstaged, and untracked changes before committing only changes attributable to the current task. Stage explicit paths or hunks, inspect the staged diff, and validate those changes. Never use a blanket add or include unrelated staged changes. If unrelated changes remain, stop before merging and preserve them; do not stash, reset, clean, or discard them to make room. Other reused target worktrees must already be clean.
-- Review `git log origin/develop..develop` against the recovery note and initial baseline. Confirm those local-only commits belong to the authorized delivery; unknown or unrelated unpushed commits block integration. Record any pre-merge task commit and include its behavior in final validation.
+- Before changing the target, check for unmerged entries or an in-progress Git operation. If present, stop and preserve that state. Check `git log origin/develop..develop` against the recovery note and initial baseline; unknown or unrelated local-only commits block integration before stashing.
+- In the original `develop` checkout, inspect staged, unstaged, and untracked changes. Commit only current-task changes using explicit paths or hunks, verifying and validating exactly what will be committed. Never use a blanket add or include unrelated staged changes. If required task edits cannot be safely separated from unrelated edits, stop without committing or stashing them. Record any pre-merge task commit and include its behavior in final validation.
+- In the authorized target only, check `git status --porcelain --untracked-files=all`. If there are remaining edits outside the delivery, run `git stash push --include-untracked -m "<unique delivery label>"` in that checkout. Do not include ignored files. Find the new entry by its unique label in `git stash list --format="%H %gs"` because worktrees share the stash list. Record its full SHA, label, and worktree path in the recovery note before merging, including any entry created by a failed stash command. Proceed only if the command succeeded, the new entry is verified, and the status check is now clean. If status started clean, skip the stash. Never reset or clean the checkout to force progress.
 
 ### Merge locally, synchronize, validate, and push
 
-1. In the clean local `develop` worktree, merge `codex/task/<slug>` with `git merge --no-ff`, preserving and recording the dedicated task merge commit.
-2. Only after that local merge, fetch `origin` and resolve `origin/develop`. Check `git merge-base --is-ancestor origin/develop develop`: exit 0 means no remote commits need merging, exit 1 requires a normal `git merge --no-edit origin/develop` in the target worktree, and any other error stops the operation. Use explicit fetch and merge rather than a pull that might rebase. Never rebase or force-push.
+Before each target merge, if `git ls-files -z --others --ignored --exclude-standard` finds ignored files, preview the result with `git merge-tree --write-tree HEAD <incoming>`. Stop if a new or changed path in the result would overwrite an ignored path (including file/directory collisions and case aliases on case-insensitive filesystems), or if safety cannot be verified. Do not rely on `--no-overwrite-ignore` alone for non-fast-forward merges.
+
+1. In the clean local `develop` worktree, merge `codex/task/<slug>` with `git merge --no-ff --no-autostash --no-overwrite-ignore`, preserving and recording the dedicated task merge commit.
+2. Only after that local merge, fetch `origin` and resolve `origin/develop`. Check `git merge-base --is-ancestor origin/develop develop`: exit 0 means no remote commits need merging, exit 1 requires `git merge --no-edit --no-autostash --no-overwrite-ignore origin/develop` in the clean target worktree, and any other error stops the operation. Use explicit fetch and merge rather than a pull that might rebase. Never rebase or force-push.
 3. Revalidate affected behavior after remote merges, conflict resolutions, or repairs. Complete overall acceptance and all final project-required gates on the resulting candidate, using the evidence rules above. Record the tested SHA and results; failed or pending checks block pushing.
 4. Confirm the target is clean and local `develop` still equals the tested SHA; unexpected local changes pause delivery. Push explicitly with `git push origin develop:develop`, without force. A rejection caused by new remote commits returns to step 2, including validation of the new candidate. Allow at most two additional push attempts (three total). Permission, network, branch-policy, fetch, or unsafe conflict failures are not race retries. On those failures or exhausted retries, preserve all recovery resources and report the blocker.
 
@@ -81,6 +84,8 @@ After the `develop` push succeeds:
 - delete a remote task counterpart only if the run record proves this run created it under explicit authorization and it still points to the recorded delivered commit, otherwise leave it untouched;
 - retain the user's original branch, `develop`, and the recovery note;
 - report the baseline SHA, task commit, merge commit, final `develop` SHA, checks, and cleanup result.
+
+On success or failure, leave any delivery stash untouched. Report its recorded SHA and worktree path, with `git stash apply --index <SHA>` for manual recovery in that checkout when it is ready.
 
 ## Recover within scope
 

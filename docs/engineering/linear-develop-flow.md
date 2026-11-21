@@ -2,7 +2,7 @@
 
 `linear-develop-flow` runs a complete Linear delivery loop: it analyzes readiness and decomposes the work, creates a delivery worktree from the latest `origin/develop` baseline, publishes the appropriate issues, coordinates implementation, and integrates the result into `develop`.
 
-By default, one executor implements the issues serially in the same delivery worktree and branch, with a separate commit and acceptance evidence for each issue. Worktree count follows isolation needs rather than issue count. An original checkout on another branch remains untouched. When the original checkout is on `develop`, final integration first commits only its current-task changes; unrelated changes block merging and remain preserved.
+By default, one executor implements the issues serially in the same delivery worktree and branch, with a separate commit and acceptance evidence for each issue. Worktree count follows isolation needs rather than issue count. Final integration can set aside unrelated edits in an authorized `develop` checkout so they do not block delivery or enter the pushed commit. An original checkout on another branch remains untouched.
 
 ## When to reach for it
 
@@ -67,7 +67,7 @@ When a task grows too large or new evidence changes the plan, affected transitio
 The result merges into local `develop` before the flow fetches and merges any newer `origin/develop` commits. Final validation covers the combined candidate, and pushing requires a clean target still pointing to the tested commit. A push rejected because the remote advanced permits up to two additional attempts, each after synchronization and validation. Other push failures preserve the recovery resources.
 
 - An existing local `develop` keeps its history. Unrelated or unexplained unpushed commits block delivery.
-- An original checkout on `develop` can be reused after only current-task changes are committed and the target is clean. Other original branches remain untouched.
+- In an original checkout on `develop`, only current-task edits may be committed. Any unrelated edits in the authorized target are stashed before merging.
 - A `develop` checked out elsewhere is located and checked for ownership before reuse; it is never forcibly checked out twice.
 - Cleanup follows a successful push and removes only this run's temporary worktrees and merged branches. Reused checkouts remain. A remote temporary branch is removed only when the record proves this run created it under separate authorization and it still points to the recorded delivered commit.
 
@@ -75,7 +75,7 @@ The result merges into local `develop` before the flow fetches and merges any ne
 
 **Does it copy my uncommitted work into the new worktree?**
 
-No. The delivery worktree starts from the recorded baseline, without copying local edits. If your original checkout is on another branch, its edits stay untouched. If it is on `develop`, the flow commits only current-task edits before final integration; unrelated remaining edits block that merge and stay preserved.
+No. The delivery worktree starts from the recorded baseline without copying local edits. An original checkout on another branch remains untouched. In the authorized `develop` target, staged, unstaged, and untracked edits outside the delivery are stashed; ignored files are not included. The stash stays in place whether the push succeeds or fails. The flow reports its SHA and checkout path so you can run `git stash apply --index <SHA>` there when ready.
 
 **Does each child issue create another worktree?**
 

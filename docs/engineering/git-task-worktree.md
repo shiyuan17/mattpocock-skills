@@ -2,7 +2,7 @@
 
 `git-task-worktree` implements one task from the latest `origin/develop` in an isolated worktree, then merges the result into `develop`, pushes it, and removes the temporary branches.
 
-Implementation stays in the task worktree. An original checkout on another branch remains untouched. When the original checkout is on `develop`, final integration first commits only its current-task changes; unrelated changes block merging and remain preserved. A task may have several verifiable implementation steps, all in one task worktree and branch.
+Implementation stays in the task worktree. Final integration can set aside unrelated edits in an authorized `develop` checkout so they do not block delivery or enter the pushed commit. An original checkout on another branch remains untouched. A task may have several verifiable implementation steps, all in one task worktree and branch.
 
 ## When to reach for it
 
@@ -18,7 +18,7 @@ The repository must expose a reachable `origin/develop` ref and allow ordinary p
 
 ## One isolated task
 
-The skill creates `codex/task/<slug>` from `origin/develop` and keeps implementation and slice checks inside that worktree. Final integration uses local `develop`, reusing a suitable checkout or creating a temporary target worktree. It never copies or cleans the original checkout.
+The skill creates `codex/task/<slug>` from `origin/develop` and keeps implementation and slice checks inside that worktree. Final integration uses local `develop`, reusing a suitable checkout or creating a temporary target worktree. It never copies local edits into the task worktree.
 
 Simple changes go directly to implementation. Larger tasks get a short sequence of observable outcomes and focused checks, shown before implementation and executed without routine approval. The first complete behavior reaches its required real environment early, after checking dependencies, credentials, account roles, ports, and allowed origins. Unavailable environments leave specific acceptance checks pending while independent work continues. Every acceptance outcome has a step and validation method, including outcomes requiring the complete task. Each step keeps the related implementation and tests together, and all steps contribute to one final task implementation commit. Evidence-only work does not create an empty commit. Unrelated tasks are reported as a mismatch; they are not automatically turned into a task graph.
 
@@ -27,7 +27,7 @@ Simple changes go directly to implementation. Larger tasks get a short sequence 
 The task branch merges into local `develop` with a dedicated merge commit before the flow fetches and merges newer `origin/develop` commits. Slice checks prove each behavior, integration checks cover affected interactions, and final acceptance plus all project-required gates cover the candidate that will be pushed. Checks follow the actual risks rather than a fixed list for every task.
 
 - An existing local `develop` keeps its history. Unrelated or unexplained unpushed commits block delivery.
-- An original checkout on `develop` can be reused after only current-task changes are committed and the target is clean. Other original branches remain untouched.
+- In an original checkout on `develop`, only current-task edits may be committed. Any unrelated edits in the authorized target are stashed before merging.
 - A `develop` checked out elsewhere is located and checked for ownership before reuse; it is never forcibly checked out twice.
 - A push rejected because the remote advanced allows up to two additional attempts, each after synchronization and validation. Other failures preserve recovery resources.
 
@@ -37,7 +37,7 @@ Recorded evidence identifies the tested content, scope, commands, environment, a
 
 **What happens to uncommitted changes in my current checkout?**
 
-The task worktree starts from `origin/develop` without copying them. If your original checkout is on another branch, they remain untouched. If it is on `develop`, the flow commits only current-task edits before final integration; unrelated remaining edits block that merge and stay preserved.
+The task worktree starts from `origin/develop` without copying them. An original checkout on another branch remains untouched. In the authorized `develop` target, staged, unstaged, and untracked edits outside the delivery are stashed; ignored files are not included. The stash stays in place whether the push succeeds or fails. The flow reports its SHA and checkout path so you can run `git stash apply --index <SHA>` there when ready.
 
 **Does it run the whole repository test suite?**
 
